@@ -1,0 +1,120 @@
+{
+  "_comment": "Fallback tray, rendered only when no Native Display campaign is live. Its shape is exactly the JSON a marketer pastes into the campaign's st_tray custom key-value, so this file doubles as the copy-paste reference for the dashboard.",
+  "v": 1,
+  "circles": [
+    {
+      "id": "new_arrivals",
+      "name": "New Arrivals",
+      "order": 1,
+      "ring": "#E1306C",
+      "avatar": "https://picsum.photos/seed/instastyle-new/240/240",
+      "stories": [
+        {
+          "id": "new_1",
+          "image": "https://picsum.photos/seed/instastyle-new-1/720/1280",
+          "duration": 5,
+          "caption": "Monsoon drop is live",
+          "deeplink": "instastyle://collection/new-arrivals",
+          "like": true,
+          "share": true,
+          "likes": 1240
+        },
+        {
+          "id": "new_2",
+          "image": "https://picsum.photos/seed/instastyle-new-2/720/1280",
+          "duration": 4,
+          "caption": "Linen, in six new shades",
+          "deeplink": "instastyle://product/linen-shirt",
+          "likes": 860
+        },
+        {
+          "id": "new_3",
+          "image": "https://picsum.photos/seed/instastyle-new-3/720/1280",
+          "duration": 6,
+          "caption": "Back in stock by Friday",
+          "likes": 402
+        }
+      ]
+    },
+    {
+      "id": "summer_sale",
+      "name": "Summer Sale",
+      "order": 2,
+      "ring": "#F77737",
+      "avatar": "https://picsum.photos/seed/instastyle-sale/240/240",
+      "stories": [
+        {
+          "id": "sale_1",
+          "image": "https://picsum.photos/seed/instastyle-sale-1/720/1280",
+          "duration": 5,
+          "caption": "Flat 50% off, today only",
+          "deeplink": "instastyle://campaign/summer-sale",
+          "likes": 3105
+        },
+        {
+          "id": "sale_2",
+          "image": "https://picsum.photos/seed/instastyle-sale-2/720/1280",
+          "duration": 5,
+          "caption": "Extra 10% on prepaid",
+          "likes": 1890
+        }
+      ]
+    },
+    {
+      "id": "styling_tips",
+      "name": "Styling Tips",
+      "order": 3,
+      "ring": "#833AB4",
+      "avatar": "https://picsum.photos/seed/instastyle-tips/240/240",
+      "stories": [
+        {
+          "id": "tips_1",
+          "image": "https://picsum.photos/seed/instastyle-tips-1/720/1280",
+          "duration": 7,
+          "caption": "Three ways to wear one scarf",
+          "likes": 640
+        },
+        {
+          "id": "tips_2",
+          "image": "https://picsum.photos/seed/instastyle-tips-2/720/1280",
+          "duration": 5,
+          "caption": "Layering for 28 degrees",
+          "likes": 512
+        },
+        {
+          "id": "tips_3",
+          "image": "https://picsum.photos/seed/instastyle-tips-3/720/1280",
+          "duration": 5,
+          "caption": "Denim, but make it office",
+          "likes": 288
+        },
+        {
+          "id": "tips_4",
+          "image": "https://picsum.photos/seed/instastyle-tips-4/720/1280",
+          "duration": 5,
+          "caption": "Save this for Monday",
+          "deeplink": "instastyle://guide/styling",
+          "likes": 133
+        }
+      ]
+    },
+    {
+      "id": "loyalty",
+      "name": "InstaClub",
+      "order": 4,
+      "ring": "#405DE6",
+      "avatar": "https://picsum.photos/seed/instastyle-club/240/240",
+      "stories": [
+        {
+          "id": "loyalty_1",
+          "image": "https://picsum.photos/seed/instastyle-club-1/720/1280",
+          "duration": 6,
+          "caption": "You are 200 points from Gold",
+          "deeplink": "instastyle://loyalty",
+          "share": false,
+          "likes": 77
+        }
+      ]
+    }
+  ]
+}

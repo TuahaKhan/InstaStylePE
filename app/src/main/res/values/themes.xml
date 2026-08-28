@@ -6,4 +6,13 @@
     </style>
 
     <style name="Theme.InstaStylePE" parent="Base.Theme.InstaStylePE" />
+
+    <!-- Story viewer: black, chrome-free, so the frame fills the screen like Instagram's. -->
+    <style name="Theme.InstaStyle.StoryViewer" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:statusBarColor">@color/transparent</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowTranslucentStatus" tools:targetApi="19">false</item>
+    </style>
 </resources>
