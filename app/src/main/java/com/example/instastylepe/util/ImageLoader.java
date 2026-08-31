@@ -46,6 +46,7 @@ public final class ImageLoader {
     private static final String CACHE_DIR = "story_images";
     private static final int CONNECT_TIMEOUT_MS = 10_000;
     private static final int READ_TIMEOUT_MS = 15_000;
+    private static final int DOWNLOAD_ATTEMPTS = 2;
     /** Floor and ceiling for the decode target, in case a display reports something odd. */
     private static final int MIN_TARGET_LONG_EDGE_PX = 1080;
     private static final int MAX_TARGET_LONG_EDGE_PX = 2560;
@@ -232,12 +233,33 @@ public final class ImageLoader {
                 Log.w(TAG, "Could not delete corrupt cache entry " + file.getName());
             }
         }
-        byte[] bytes = download(url);
+        byte[] bytes = downloadWithRetry(url);
         if (bytes == null) {
             return null;
         }
         writeFile(file, bytes);
         return decode(bytes);
+    }
+
+    /**
+     * One retry, because the first image request of a run routinely eats a cold DNS lookup and TLS
+     * handshake on an emulator and times out on its own. A second attempt is nearly free and turns
+     * a black story frame back into a picture. A genuinely unreachable host still fails, twice.
+     */
+    @Nullable
+    private byte[] downloadWithRetry(@NonNull String url) throws Exception {
+        for (int attempt = 1; attempt <= DOWNLOAD_ATTEMPTS; attempt++) {
+            try {
+                return download(url);
+            } catch (Exception e) {
+                if (attempt == DOWNLOAD_ATTEMPTS) {
+                    throw e;
+                }
+                Log.w(TAG, "Attempt " + attempt + " failed for " + url + " (" + e.getMessage()
+                        + "), retrying");
+            }
+        }
+        return null;
     }
 
     @Nullable

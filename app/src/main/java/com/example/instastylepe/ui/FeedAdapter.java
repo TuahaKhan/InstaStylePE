@@ -58,7 +58,7 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedHolder> {
 
         void bind(int position) {
             caption.setText(CAPTIONS[position]);
-            String url = "https://picsum.photos/seed/instastyle-feed-" + position + "/640/640";
+            String url = "https://placecats.com/640/640?i=feed" + position;
             ImageLoader.get(itemView.getContext()).load(url, image);
         }
     }

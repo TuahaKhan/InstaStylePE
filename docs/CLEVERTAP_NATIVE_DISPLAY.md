@@ -220,6 +220,29 @@ Static images only, in this build. Animated GIFs render as their first frame and
 handled at all; Native Display itself can carry a video URL, but the player would need a
 `MediaPlayer`/Media3 surface added to use it.
 
+#### Placeholder images while demoing
+
+The bundled sample tray points at `placecats.com`, in the shapes above:
+
+```
+frame    https://placecats.com/1080/1920?i=<unique>
+avatar   https://placecats.com/240/240?i=<unique>
+```
+
+Two things to get right, both of which look like app bugs when you get them wrong:
+
+- **Every frame needs a distinct URL.** The image cache is keyed on the URL, in memory and on disk.
+  Point four frames at the same URL and they are not four frames that happen to look alike — they
+  are one bitmap shown four times, so the story appears frozen while the progress bar keeps moving.
+  The `?i=` suffix above exists only to make otherwise-identical URLs unique; any query string the
+  host ignores will do, and a service with named variants (`/neo/1080/1920`) is nicer still because
+  the pictures actually differ.
+- **Pick a host the demo device can reach.** `picsum.photos` timed out from a corporate network
+  during testing, which is what prompted the switch. A failed image leaves the frame black while
+  its timer runs on, so a blocked image host reads as a broken app. `adb logcat -s StoryImages`
+  names the URL and the failure. The loader retries once — enough for a cold DNS lookup and TLS
+  handshake on an emulator, not enough to rescue a host that is genuinely blocked.
+
 ### Two things worth knowing
 
 - **One campaign per trigger event, so author the whole tray in one campaign.** The app does merge
