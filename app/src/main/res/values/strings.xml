@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">Insta Style PE</string>
+    <string name="brand">InstaStyle</string>
+    <string name="reset_demo">Reset</string>
+    <string name="demo_state_reset">Rings and likes reset. CleverTap profile counters kept.</string>
+
+    <!-- Provenance banner. Deliberately visible: during a walkthrough it is the proof that the
+         tray came from a campaign rather than from the app. -->
+    <string name="source_none">Waiting for a Native Display campaign…</string>
+    <string name="source_fallback">Bundled sample tray (no live Native Display campaign found)</string>
+    <string name="source_native_display">Native Display · %1$d unit(s) · campaign %2$s · %3$d circles, %4$d stories · %5$d ms</string>
+    <string name="tray_empty_label">No stories yet. Publish a Native Display campaign to fill this row.</string>
+
+    <string name="story_circle_description">%1$s, %2$d stories</string>
+    <string name="close">Close</string>
+    <string name="like">Like</string>
+    <string name="share">Share</string>
+    <string name="shared_toast">Shared (demo only — nothing left the device)</string>
+    <string name="deeplink_toast">Would open %1$s</string>
+    <string name="view_more">View</string>
+    <string name="story_counter_format">%1$d/%2$d</string>
 </resources>
