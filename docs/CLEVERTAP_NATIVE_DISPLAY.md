@@ -181,6 +181,45 @@ case-insensitive. Schema B's advantage: a typo costs one field, not the whole tr
 | `share` | `share_enabled`, `show_share` | `true` |
 | `likes` | `like_count`, `base_likes` | 0 (cosmetic starting number) |
 
+### Image specification
+
+| | Story frame | Circle avatar |
+|---|---|---|
+| **Aspect** | 9:16 portrait | 1:1 square |
+| **Recommended** | **1080 × 1920** | **240 × 240** |
+| **Minimum** | 720 × 1280 | 192 × 192 |
+| **Above which it's wasted** | screen's long edge (~2560) | 512 × 512 |
+| **How it's fitted** | `centerCrop`, full-bleed | `centerCrop`, then clipped to a circle |
+| **Target file size** | ≤ 300 KB | ≤ 40 KB |
+| **Formats** | JPEG, PNG, WebP (static) | same |
+
+Five things that follow from how the player draws these:
+
+- **Frames are cropped, never letterboxed.** `centerCrop` scales until both axes cover the screen and
+  crops the overflow. On a modern 20:9 phone a 9:16 frame loses roughly **12% off each side**. If a
+  frame carries edge-to-edge text or a logo near the left/right edge, either pull it inwards or
+  author at **1080 × 2340** (9:19.5), which fills a tall screen with no side crop while still
+  cropping gracefully on a 16:9 one.
+- **The top and bottom of every frame sit under chrome.** Progress bars, circle name and close
+  button occupy the top ~140dp; caption, CTA chip, heart and share button the bottom ~200dp. That is
+  roughly the top 18% and bottom 25% of a tall screen. Keep faces, prices and logos in the middle
+  band, and let the edges carry the photograph.
+- **Send opaque images.** Frames decode as `RGB_565` — no alpha channel — which halves what each
+  cached frame costs in memory. A transparent PNG will composite onto black rather than onto the
+  frame behind it.
+- **Oversized assets cost download time, not quality.** The loader decodes towards the device's own
+  long edge and never below it, so a 4000px master is downsampled on the way in — you pay for the
+  bytes over the network and gain nothing on screen. 1080 × 1920 at JPEG quality ~80 is the sweet
+  spot.
+- **The first frame of a circle is the one that can stall.** While a frame plays, the next one is
+  already being prefetched, so a 5-second frame buys 5 seconds of headroom for its successor. The
+  very first frame after a cold install has no such cover — which is exactly why file size matters
+  more than resolution here.
+
+Static images only, in this build. Animated GIFs render as their first frame and video is not
+handled at all; Native Display itself can carry a video URL, but the player would need a
+`MediaPlayer`/Media3 surface added to use it.
+
 ### Two things worth knowing
 
 - **One campaign per trigger event, so author the whole tray in one campaign.** The app does merge

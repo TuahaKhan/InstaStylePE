@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
 import android.widget.ImageView;
@@ -45,13 +46,20 @@ public final class ImageLoader {
     private static final String CACHE_DIR = "story_images";
     private static final int CONNECT_TIMEOUT_MS = 10_000;
     private static final int READ_TIMEOUT_MS = 15_000;
-    /** Full-screen stories never need more than this; keeps decoded bitmaps modest. */
-    private static final int MAX_DIMENSION_PX = 1440;
+    /** Floor and ceiling for the decode target, in case a display reports something odd. */
+    private static final int MIN_TARGET_LONG_EDGE_PX = 1080;
+    private static final int MAX_TARGET_LONG_EDGE_PX = 2560;
 
     @Nullable
     private static volatile ImageLoader instance;
 
     private final File cacheDir;
+    /**
+     * Long edge to decode towards - the screen's own long edge. A story frame fills the display,
+     * so decoding to anything less than this is visible as softness, and anything more is memory
+     * spent on pixels that cannot be shown.
+     */
+    private final int targetLongEdgePx;
     private final LruCache<String, Bitmap> memoryCache;
     private final ExecutorService executor = Executors.newFixedThreadPool(3);
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -66,7 +74,13 @@ public final class ImageLoader {
     private final Map<String, List<Callback>> waiting = new HashMap<>();
 
     private ImageLoader(@NonNull Context context) {
-        cacheDir = new File(context.getApplicationContext().getCacheDir(), CACHE_DIR);
+        Context appContext = context.getApplicationContext();
+        cacheDir = new File(appContext.getCacheDir(), CACHE_DIR);
+
+        DisplayMetrics metrics = appContext.getResources().getDisplayMetrics();
+        int screenLongEdge = Math.max(metrics.widthPixels, metrics.heightPixels);
+        targetLongEdgePx = Math.max(MIN_TARGET_LONG_EDGE_PX,
+                Math.min(MAX_TARGET_LONG_EDGE_PX, screenLongEdge));
         if (!cacheDir.exists() && !cacheDir.mkdirs()) {
             Log.w(TAG, "Could not create image cache dir");
         }
@@ -252,20 +266,30 @@ public final class ImageLoader {
         }
     }
 
-    /** Decodes downsampled, so a 4000px marketing asset does not blow up the heap. */
+    /**
+     * Decodes downsampled, so a 4000px marketing asset does not blow up the heap.
+     *
+     * <p>The sample size is the largest power of two that still leaves the image <b>at or above</b>
+     * the screen's long edge - never below it. Halving one step too far is the classic version of
+     * this bug: with a 1440px cap, a 1080x1920 story asset would decode at 540x960 and look
+     * visibly soft stretched back over a 1080p screen.</p>
+     */
     @Nullable
     private Bitmap decode(@NonNull byte[] bytes) {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(bytes, 0, bytes.length, bounds);
 
-        int sample = 1;
         int longest = Math.max(bounds.outWidth, bounds.outHeight);
-        while (longest / sample > MAX_DIMENSION_PX) {
+        int sample = 1;
+        while (longest / (sample * 2) >= targetLongEdgePx) {
             sample *= 2;
         }
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inSampleSize = sample;
+        // Stories are full-bleed opaque photographs, so dropping the alpha channel halves the
+        // memory each cached frame costs. Assets that rely on transparency will composite onto
+        // black - send opaque images.
         options.inPreferredConfig = Bitmap.Config.RGB_565;
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
     }
