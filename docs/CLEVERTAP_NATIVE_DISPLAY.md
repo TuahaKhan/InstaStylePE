@@ -362,28 +362,45 @@ a custom event property works in Trends and Pivots, which is what the whole taxo
 on. There is **no computed-metric tile** — no arithmetic between two event counts in one widget —
 which is why net likes is handled the way §6 describes.
 
-Tiles, in the order that tells the story to a client:
+### Before trusting a four-step funnel
 
-1. **Funnel** — `Story Tray Rendered` → `Story Circle Opened` → `Story Viewed` →
-   `Story Interacted`. Top-line conversion of the whole feature.
-2. **Circle popularity** — `Story Circle Opened`, unique users, grouped by `circle_name`.
-   Which circle earns the first slot.
-3. **Tap-through by position** — `Story Circle Opened`, grouped by `circle_seq_in_session`.
-   How deep across circles people go; the drop from 1 → 2 is the number to watch.
-4. **Frame drop-off** — `Story Viewed`, unique users, grouped by `story_position`, filtered to one
-   `circle_id`. The classic story completion curve.
-5. **Completion vs skip** — `Story Viewed` grouped by `exit_reason`, or filtered to
-   `completed = true` against total. Segment by `story_duration_secs` and you have a direct read on
-   whether 5s or 7s frames hold attention.
-6. **Auto-advance value** — `Story Circle Opened` grouped by `open_source`. How much of the reach on
-   later circles the roll-on is creating rather than deliberate taps.
-7. **Interaction mix** — `Story Interacted` grouped by `action`. Likes vs removals vs shares vs CTA.
-8. **Likes by story** — `Story Interacted` filtered `action = like`, grouped by `story_id`.
-9. **Net likers** — a segment on `liked_story_ids` containing a story id; see §6.
-10. **Delivery health** — `Story Tray Rendered` grouped by `payload_source` (should be ~100%
-    `native_display`) and average `render_latency_ms`.
+The obvious funnel - **Story Tray Rendered -> Story Circle Opened -> Story Viewed -> Story
+Interacted** - understates its last step, for two independent reasons.
 
----
+- **Ordering.** `Story Viewed` fires when a frame *leaves* the screen; `Story Interacted` fires
+  *during* it. A user who likes the first frame they ever see and then closes emits Interacted
+  before their only Viewed, so a funnel requiring Viewed -> Interacted in order drops them. Put
+  `Story Circle Opened` immediately before `Story Interacted` instead: a circle is always opened
+  before anything can be liked, so that ordering always holds.
+- **Base rate.** Liking and sharing are rare next to viewing. A final step at 2-4% is normal, but it
+  makes the whole funnel look broken. Keep the reach funnel (Q2) and the engagement funnel (Q9) as
+  two separate tiles rather than one four-step chain.
+
+### The queries
+
+Each is one tile. The prompt line is what to type into the CleverTap MCP `Analytics` tool if you
+want to run it before pinning - that tool returns the generated CQL next to the result, so the
+interpretation can be audited.
+
+| # | Question | Type | Configuration |
+|---|---|---|---|
+| Q1 | Is the campaign landing? | Trends | `Story Tray Rendered` grouped by `payload_source`; second tile for average `render_latency_ms`. Should be ~100% `native_display`. |
+| Q2 | Does the tray get used? | Funnel | `Story Tray Rendered` -> `Story Circle Opened`, 1-day window. The headline number; put it top-left. |
+| Q3 | Which circle earns slot one? | Trends | `Story Circle Opened`, unique users, grouped by `circle_name`. Cross-check against `circle_position` to separate popular from merely first. |
+| Q4 | How deep across the tray? | Trends | `Story Circle Opened`, unique users, grouped by `circle_seq_in_session`. The 1 -> 2 drop decides whether a fifth circle is worth authoring. |
+| Q5 | What is auto-advance worth? | Trends | `Story Circle Opened` grouped by `open_source`. Splits later-circle reach into deliberate taps versus the roll-on. |
+| Q6 | Frame drop-off in one circle | Funnel | `Story Viewed` at `story_position` 1 -> 2 -> 3, every step filtered to one `circle_id`, 1-hour window. A funnel enforces order, so it counts real progression rather than people who saw frame 3 in another session. |
+| Q7 | Watched versus skipped | Pivot | `Story Viewed`, rows `circle_name`, columns `exit_reason`. High `closed` marks where people leave. |
+| Q8 | Is 5 seconds right? | Pivot | `Story Viewed`, rows `story_duration_secs`, columns `completed`. Completion against authored duration - and the tile that most wants a real experiment behind it. |
+| Q9 | Engagement rate | Funnel | `Story Circle Opened` -> `Story Interacted`, 1-hour window. Deliberately not hung off `Story Viewed`, per the ordering note above. |
+| Q10 | Interaction mix | Trends | `Story Interacted` grouped by `action`. Four behaviours from one event - the tile that justifies the taxonomy. |
+| Q11 | Likes and removals per frame | Pivot | `Story Interacted` filtered to `action` in (`like`, `like_removed`), rows `story_id`, columns `action`. The honest version of net likes. |
+| Q12 | Who likes this frame right now? | Segment | Profiles where `liked_story_ids` contains a story id. The only count on the board that **goes down**. |
+
+Optional and good live: a **Flow** anchored on `Story Circle Opened` shows what users do next without
+guessing the paths. Add it in the dashboard, where next-step events are named - run through the MCP
+tool instead and the discovered next-step events come back as numeric ids that no current tool
+resolves.
 
 ## 6. The like/unlike decrement question
 
