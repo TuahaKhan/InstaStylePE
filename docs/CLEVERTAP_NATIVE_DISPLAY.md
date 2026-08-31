@@ -100,10 +100,18 @@ while waiting for a project to be provisioned.
 
 ## 3. Marketer guide: creating the campaign
 
-**Campaign → Native Display → Custom Key Value.**
+**Campaigns → + Campaign → Native Display** (under *Messaging Channels*), then pick the
+**Custom key-value** template.
+
 **When:** the event named in `CLEVERTAP_STORY_TRIGGER_EVENT`, by default `Home Screen Viewed`
 (the app raises it on every home-screen entry).
 **Who:** all users, or whatever segment the demo needs.
+
+> **One campaign carries the whole tray.** On mobile, CleverTap delivers only **one** Native
+> Display campaign per triggering event — if several qualify, the one created first for that event
+> wins, and Native Display on mobile does not expose the priority control that web and in-app
+> campaigns have. So put every circle in a single campaign. See the note at the end of this section
+> for what the app's unit merging is actually good for.
 
 The custom key-value editor gives you flat text rows: keys and string values, no nesting. So the
 tray is authored one of two ways — the app accepts both, and picks whichever it finds.
@@ -175,11 +183,14 @@ case-insensitive. Schema B's advantage: a typo costs one field, not the whole tr
 
 ### Two things worth knowing
 
-- **The app merges every display unit it receives.** If your account only lets one Native Display
-  campaign qualify per triggering event, one campaign carrying all circles works — that is the
-  documented path here. But if you ever split the tray across campaigns (say a always-on tray plus
-  a segment-specific circle), the app merges them and sorts by `order` with no code change.
-  Circle `id` is the merge key, so the same id in two campaigns updates rather than duplicates.
+- **One campaign per trigger event, so author the whole tray in one campaign.** The app does merge
+  every display unit it receives, keyed on circle `id` and sorted by `order` — but that does not
+  buy you two campaigns on the same trigger, because CleverTap will only deliver one of them on
+  mobile. What the merging is genuinely good for: units arriving on **different** trigger events
+  (say an always-on tray on `Home Screen Viewed` plus a seasonal circle triggered elsewhere) and
+  units still held in the SDK's on-device cache from an earlier session, which coexist with a fresh
+  one instead of fighting it. It also means the app needs no change if CleverTap's delivery rules
+  ever loosen.
 - **Campaign impressions and clicks are separate from the custom events.** The app calls
   `pushDisplayUnitViewedEventForID` when the tray paints and `pushDisplayUnitClickedEventForID`
   when a circle is opened from the tray. Those are what fill in Impressions / Clicks / CTR on the
@@ -279,6 +290,15 @@ on the campaign report. Not raised by the four events above; the app raises them
 ---
 
 ## 5. Custom board recipe
+
+**Boards → + Board** (or *Create Board* on Boards 2.0) → name it → **Create**. Then either build the
+analysis in Trends / Funnels / Pivots and use **Pin / Add to Board**, or open the board and use
+**Add Tile**, configure the analysis, **View Analysis** → **Save**.
+
+Pinnable tile types: Trends, Funnels, Pivots, Cohorts, Flows, Segments, Notes. Grouping an event by
+a custom event property works in Trends and Pivots, which is what the whole taxonomy below relies
+on. There is **no computed-metric tile** — no arithmetic between two event counts in one widget —
+which is why net likes is handled the way §6 describes.
 
 Tiles, in the order that tells the story to a client:
 
@@ -411,6 +431,11 @@ per-user personalised with the messaging tooling the marketer already knows, and
 and clicks are counted for free. A mature answer is often both — Product Experiences for the
 feature's structure and behaviour, Native Display or in-app for the time-boxed promotional circle.
 
-> Capability details for Product Experiences were written from working knowledge; the sandbox this
-> was built in could not reach `developer.clevertap.com`, so confirm exact variable types and
+> **Provenance of the claims in this doc.** The SDK behaviour (API signatures, custom KV arriving as
+> a flat string map, display unit id format) was read from the CleverTap Android SDK source at
+> v8.4.1. The dashboard paths, the Native Display template list, the one-campaign-per-trigger-event
+> rule on mobile, the pinnable board tile types and the absence of a computed-metric tile were
+> confirmed through CleverTap's own documentation Q&A. The Product Experiences capability details in
+> §8 are from working knowledge only — the sandbox this was built in could not reach
+> `developer.clevertap.com` or `docs.clevertap.com` directly, so confirm exact variable types and
 > experiment metric options against current docs before putting numbers in front of the client.
