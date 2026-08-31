@@ -433,12 +433,44 @@ So the honest framing for the client is:
 | "How engaged is this user?" | `story_likes_net` on the profile. Goes down on unlike. |
 | "Show net likes as one board tile" | Not directly. Put `action = like` and `action = like_removed` side by side, or use the profile-based segment count. |
 
-Two caveats to state up front rather than discover later: a CleverTap multi-value property holds a
-bounded number of values (on the order of 100), so `liked_story_ids` suits a demo and a
-sensibly-sized catalogue, not an unbounded like history — a real deployment would keep the like
-ledger in the client's own backend and mirror only aggregates to CleverTap. And an exact
-*global* sum of `story_likes_net` across all profiles is not a standard board tile; segment counts
-and distributions are, and the Profile Counts API can produce exact numbers if needed.
+### Multi-value limits worth stating before the client hits them
+
+`liked_story_ids` is a multi-value profile property, and those have hard edges. From the SDK source
+(`validation/ValidationConfig.kt`):
+
+- **100 values per array**, declared as `addArrayLengthValidation(100)`. Beyond that the array is
+  reported to trim oldest-first rather than reject the write — so the 101st like silently evicts the
+  user's first one, and a story the user still likes quietly stops being in the set. (The 100 cap is
+  confirmed in the config; the FIFO eviction is reported behaviour we did not trace to the
+  enforcement site. Either way, treat 100 as a ceiling to design under, not to lean on.)
+- **Twelve reserved key names** cannot be used as multi-value fields — `name`, `email`, `education`,
+  `married`, `dob`, `gender`, `phone`, `age`, `fbid`, `gpid`, `birthday`, `identity`. An attempt is
+  dropped with error 523. `liked_story_ids` is deliberately outside that list; don't rename it into
+  one.
+- **No TTL.** Values live until something removes them. Cleanup is manual, via `$add` / `$remove` on
+  the Upload User Profiles API.
+
+The consequence for a real deployment: this is a *projection* of like state for segmentation, not the
+system of record. Keep the ledger in the client's own backend and mirror a bounded, useful subset
+here. For a demo with a few dozen frames it is exactly right.
+
+One more: an exact *global* sum of `story_likes_net` across all profiles is not a standard board
+tile. Segment counts and property distributions are, and the Profile Counts API gives exact numbers
+if a slide needs one.
+
+### What a string array cannot do
+
+A multi-value property holds **strings**, so `liked_story_ids` answers "does this user like this
+story, yes or no" and nothing more. It cannot carry *when* the like happened, or a per-story count,
+because there is nowhere to put a second field per entry.
+
+Doing that natively would need CleverTap's **nested object / array-of-object profile attributes**,
+which is an **opt-in feature gated behind a per-account flag** — it is not on by default and has to
+be requested through CleverTap support. That is why this build does not use it: a demo must not
+depend on a flag that may not be enabled on the account you end up presenting from. If the client
+wants per-like timestamps or per-story counts on the profile, check whether nested attributes are
+already enabled for them; otherwise the like timestamp is already available on the
+`Story Interacted` event, which is the better home for it anyway.
 
 ---
 
